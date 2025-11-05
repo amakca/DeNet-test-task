@@ -69,7 +69,7 @@ func (r *UserRepo) GetUserByUsernameAndPassword(ctx context.Context, username, p
 
 func (r *UserRepo) GetUserById(ctx context.Context, id int) (entity.User, error) {
 	sql, args, _ := r.Builder.
-		Select("id, username, password, created_at").
+		Select("id, username, password, created_at, points, referrer").
 		From("users").
 		Where("id = ?", id).
 		ToSql()
@@ -80,6 +80,8 @@ func (r *UserRepo) GetUserById(ctx context.Context, id int) (entity.User, error)
 		&user.Username,
 		&user.Password,
 		&user.CreatedAt,
+		&user.Points,
+		&user.Referrer,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -93,7 +95,7 @@ func (r *UserRepo) GetUserById(ctx context.Context, id int) (entity.User, error)
 
 func (r *UserRepo) GetUserByUsername(ctx context.Context, username string) (entity.User, error) {
 	sql, args, _ := r.Builder.
-		Select("id, username, password, created_at").
+		Select("id, username, password, created_at, points, referrer").
 		From("users").
 		Where("username = ?", username).
 		ToSql()
@@ -104,6 +106,8 @@ func (r *UserRepo) GetUserByUsername(ctx context.Context, username string) (enti
 		&user.Username,
 		&user.Password,
 		&user.CreatedAt,
+		&user.Points,
+		&user.Referrer,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
