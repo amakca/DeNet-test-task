@@ -45,7 +45,7 @@ func (r *UserRepo) CreateUser(ctx context.Context, user entity.User) (int, error
 
 func (r *UserRepo) GetUserByUsernameAndPassword(ctx context.Context, username, password string) (entity.User, error) {
 	sql, args, _ := r.Builder.
-		Select("id, username, password, created_at").
+		Select("id, username, password, created_at, referrer, email").
 		From("users").
 		Where("username = ? AND password = ?", username, password).
 		ToSql()
@@ -56,6 +56,8 @@ func (r *UserRepo) GetUserByUsernameAndPassword(ctx context.Context, username, p
 		&user.Username,
 		&user.Password,
 		&user.CreatedAt,
+		&user.Referrer,
+		&user.Email,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -69,7 +71,7 @@ func (r *UserRepo) GetUserByUsernameAndPassword(ctx context.Context, username, p
 
 func (r *UserRepo) GetUserById(ctx context.Context, id int) (entity.User, error) {
 	sql, args, _ := r.Builder.
-		Select("id, username, password, created_at, points, referrer").
+		Select("id, username, password, created_at, referrer, email").
 		From("users").
 		Where("id = ?", id).
 		ToSql()
@@ -80,7 +82,8 @@ func (r *UserRepo) GetUserById(ctx context.Context, id int) (entity.User, error)
 		&user.Username,
 		&user.Password,
 		&user.CreatedAt,
-		&user.Points,
+		&user.Referrer,
+		&user.Email,
 		&user.Referrer,
 	)
 	if err != nil {
@@ -95,7 +98,7 @@ func (r *UserRepo) GetUserById(ctx context.Context, id int) (entity.User, error)
 
 func (r *UserRepo) GetUserByUsername(ctx context.Context, username string) (entity.User, error) {
 	sql, args, _ := r.Builder.
-		Select("id, username, password, created_at, points, referrer").
+		Select("id, username, password, created_at, referrer, email").
 		From("users").
 		Where("username = ?", username).
 		ToSql()
@@ -106,7 +109,8 @@ func (r *UserRepo) GetUserByUsername(ctx context.Context, username string) (enti
 		&user.Username,
 		&user.Password,
 		&user.CreatedAt,
-		&user.Points,
+		&user.Referrer,
+		&user.Email,
 		&user.Referrer,
 	)
 	if err != nil {
@@ -117,4 +121,40 @@ func (r *UserRepo) GetUserByUsername(ctx context.Context, username string) (enti
 	}
 
 	return user, nil
+}
+
+func (r *UserRepo) SetUserReferrer(ctx context.Context, id int, referrer string) error {
+	sql, args, _ := r.Builder.
+		Update("users").
+		Set("referrer", referrer).
+		Where("id = ?", id).
+		ToSql()
+
+	tag, err := r.Pool.Exec(ctx, sql, args...)
+	if err != nil {
+		return fmt.Errorf("UserRepo.UpdateUserReferrer - r.Pool.Exec: %v", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return repoerrs.ErrNotFound
+	}
+
+	return nil
+}
+
+func (r *UserRepo) SetUserEmail(ctx context.Context, id int, email string) error {
+	sql, args, _ := r.Builder.
+		Update("users").
+		Set("email", email).
+		Where("id = ?", id).
+		ToSql()
+
+	tag, err := r.Pool.Exec(ctx, sql, args...)
+	if err != nil {
+		return fmt.Errorf("UserRepo.SetUserEmail - r.Pool.Exec: %v", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return repoerrs.ErrNotFound
+	}
+
+	return nil
 }
