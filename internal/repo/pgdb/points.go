@@ -93,3 +93,25 @@ func (r *PointRepo) GetPointsByUserId(ctx context.Context, userId int) (int, err
 	}
 	return points, nil
 }
+
+func (r *PointRepo) GetLeaderboard(ctx context.Context, limit int) ([]entity.Point, error) {
+	sql, args, _ := r.Builder.
+		Select("user_id, SUM(points) as points").
+		From("points").
+		GroupBy("user_id").
+		OrderBy("points DESC").
+		Limit(uint64(limit)).
+		ToSql()
+
+	rows, err := r.Pool.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, fmt.Errorf("PointRepo.GetLeaderboard - r.Pool.Query: %v", err)
+	}
+	defer rows.Close()
+
+	leaderboard, err := pgx.CollectRows(rows, pgx.RowToStructByName[entity.Point])
+	if err != nil {
+		return nil, fmt.Errorf("PointRepo.GetLeaderboard - pgx.CollectRows: %v", err)
+	}
+	return leaderboard, nil
+}
