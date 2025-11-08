@@ -23,14 +23,22 @@ type Task interface {
 	GetAllTasks(ctx context.Context) ([]entity.Task, error)
 }
 
+type Point interface {
+	AddPointsByUserId(ctx context.Context, userId int, taskId int, points int) error
+	GetHistoryByUserId(ctx context.Context, userId int) ([]entity.Point, error)
+	CheckCompletedTask(ctx context.Context, userId int, taskId int) (bool, error)
+}
+
 type Repositories struct {
 	User
 	Task
+	Point
 }
 
 func NewRepositories(pg *postgres.Postgres) *Repositories {
 	return &Repositories{
-		User: pgdb.NewUserRepo(pg),
-		Task: pgdb.NewTaskRepo(pg),
+		User:  pgdb.NewUserRepo(pg),
+		Task:  pgdb.NewTaskRepo(pg),
+		Point: pgdb.NewPointRepo(pg),
 	}
 }
