@@ -17,12 +17,20 @@ type User interface {
 	SetUserEmail(ctx context.Context, id int, email string) error
 }
 
+type Task interface {
+	GetTaskById(ctx context.Context, id int) (entity.Task, error)
+	GetTaskByName(ctx context.Context, name string) (entity.Task, error)
+	GetAllTasks(ctx context.Context) ([]entity.Task, error)
+}
+
 type Repositories struct {
 	User
+	Task
 }
 
 func NewRepositories(pg *postgres.Postgres) *Repositories {
 	return &Repositories{
 		User: pgdb.NewUserRepo(pg),
+		Task: pgdb.NewTaskRepo(pg),
 	}
 }
