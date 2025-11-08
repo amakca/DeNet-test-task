@@ -12,6 +12,9 @@ type User interface {
 	GetUserByUsernameAndPassword(ctx context.Context, username, password string) (entity.User, error)
 	GetUserById(ctx context.Context, id int) (entity.User, error)
 	GetUserByUsername(ctx context.Context, username string) (entity.User, error)
+
+	SetUserReferrer(ctx context.Context, id int, referrer string) error
+	SetUserEmail(ctx context.Context, id int, email string) error
 }
 
 type Repositories struct {
