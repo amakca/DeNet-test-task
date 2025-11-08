@@ -78,3 +78,18 @@ func (r *PointRepo) CheckCompletedTask(ctx context.Context, userId int, taskId i
 	}
 	return cnt > 0, nil
 }
+
+func (r *PointRepo) GetPointsByUserId(ctx context.Context, userId int) (int, error) {
+
+	sql, args, _ := r.Builder.
+		Select("COALESCE(SUM(points), 0)").
+		From("points").
+		Where("user_id = ?", userId).
+		ToSql()
+
+	var points int
+	if err := r.Pool.QueryRow(ctx, sql, args...).Scan(&points); err != nil {
+		return 0, fmt.Errorf("PointRepo.GetPointsByUserId - r.Pool.QueryRow: %v", err)
+	}
+	return points, nil
+}

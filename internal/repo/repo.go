@@ -25,6 +25,7 @@ type Task interface {
 
 type Point interface {
 	AddPointsByUserId(ctx context.Context, userId int, taskId int, points int) error
+	GetPointsByUserId(ctx context.Context, userId int) (int, error)
 	GetHistoryByUserId(ctx context.Context, userId int) ([]entity.Point, error)
 	CheckCompletedTask(ctx context.Context, userId int, taskId int) (bool, error)
 }
