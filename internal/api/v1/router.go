@@ -24,8 +24,16 @@ func NewRouter(r chi.Router, services *service.Services) {
 	})
 
 	authMiddleware := &apimv.AuthMiddleware{AuthService: services.Auth}
+
 	r.Route("/api/v1", func(api chi.Router) {
 		api.Use(authMiddleware.UserIdentity)
-		// Остальные группы хендлеров
+
+		api.Route("/users", func(ur chi.Router) {
+			newUsersRoutes(ur, services.User, services.Tasks)
+		})
+
+		api.Route("/tasks", func(tr chi.Router) {
+			newTasksRoutes(tr, services.Tasks)
+		})
 	})
 }

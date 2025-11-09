@@ -3,7 +3,7 @@ package middlewares
 import (
 	"context"
 	"denet-test-task/internal/api/v1/apierrs"
-	"denet-test-task/internal/services/contracts"
+	"denet-test-task/internal/services/auth"
 	"denet-test-task/pkg/logctx"
 	"net/http"
 	"strings"
@@ -16,7 +16,7 @@ const (
 )
 
 type AuthMiddleware struct {
-	AuthService contracts.Auth
+	AuthService auth.Auth
 }
 
 func (h *AuthMiddleware) UserIdentity(next http.Handler) http.Handler {

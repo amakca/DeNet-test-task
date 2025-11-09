@@ -16,6 +16,15 @@ var (
 	ErrCannotCheckCompletedTask = fmt.Errorf("cannot check if task is completed")
 	ErrCannotAddPoints          = fmt.Errorf("cannot add points")
 	ErrCannotGetTasks           = fmt.Errorf("cannot get tasks")
+	ErrUserAlreadySetReferrer   = fmt.Errorf("user already has a referrer")
+)
+
+const (
+	TaskGiveReferral = iota + 1
+	TaskGetReferral
+	TaskSubscribeTelegram
+	TaskSubscribeTwitter
+	TaskCompleteEmail
 )
 
 type UsersService struct {
@@ -56,6 +65,36 @@ func (s *UsersService) SetEmail(ctx context.Context, input UsersSetEmailInput) e
 }
 
 func (s *UsersService) SetReferrer(ctx context.Context, input UsersSetReferrerInput) error {
+
+	_, err := s.usersRepo.GetUserById(ctx, input.Referrer)
+	if err != nil {
+		logctx.FromContext(ctx).Error("UsersService.SetReferrer - usersRepo.GetUserById", "err", err)
+		return err
+	}
+
+	user, err := s.usersRepo.GetUserById(ctx, input.UserId)
+	if err != nil {
+		logctx.FromContext(ctx).Error("UsersService.SetReferrer - usersRepo.GetUserById", "err", err)
+		return err
+	}
+	if user.Referrer != "" {
+		logctx.FromContext(ctx).Error("UsersService.SetReferrer - user already has a referrer")
+		return ErrUserAlreadySetReferrer
+	}
+
+	pointsForReferrer, ok := s.tasksList[TaskGiveReferral]
+	if !ok {
+		logctx.FromContext(ctx).Error("UsersService.SetReferrer - task not found")
+		return ErrTaskNotFound
+	}
+	pointsForUser, ok := s.tasksList[TaskGetReferral]
+	if !ok {
+		logctx.FromContext(ctx).Error("UsersService.SetReferrer - task not found")
+		return ErrTaskNotFound
+	}
+
+	s.pointsRepo.AddPointsByUserId(ctx, input.Referrer, TaskGiveReferral, pointsForReferrer)
+	s.pointsRepo.AddPointsByUserId(ctx, input.UserId, TaskGetReferral, pointsForUser)
 	return s.usersRepo.SetUserReferrer(ctx, input.UserId, input.Referrer)
 }
 

@@ -2,8 +2,7 @@ package v1
 
 import (
 	"denet-test-task/internal/api/v1/apierrs"
-	"denet-test-task/internal/services/contracts"
-	"denet-test-task/internal/services/users"
+	"denet-test-task/internal/services/auth"
 	"denet-test-task/pkg/validator"
 	"encoding/json"
 	"net/http"
@@ -12,7 +11,7 @@ import (
 )
 
 type authRoutes struct {
-	authService contracts.Auth
+	authService auth.Auth
 }
 
 type authInput struct {
@@ -20,7 +19,7 @@ type authInput struct {
 	Password string `json:"password"`
 }
 
-func newAuthRoutes(router chi.Router, authService contracts.Auth) {
+func newAuthRoutes(router chi.Router, authService auth.Auth) {
 	routes := &authRoutes{
 		authService: authService,
 	}
@@ -42,12 +41,12 @@ func (a *authRoutes) handleSignup(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	id, err := a.authService.CreateUser(req.Context(), contracts.AuthCreateUserInput{
+	id, err := a.authService.CreateUser(req.Context(), auth.AuthCreateUserInput{
 		Username: input.Username,
 		Password: input.Password,
 	})
 	if err != nil {
-		if err == users.ErrUserAlreadyExists {
+		if err == auth.ErrUserAlreadyExists {
 			apierrs.NewErrorResponseHTTP(w, http.StatusBadRequest, err.Error())
 			return
 		}
@@ -77,12 +76,12 @@ func (a *authRoutes) handleLogin(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	token, err := a.authService.GenerateToken(req.Context(), contracts.AuthGenerateTokenInput{
+	token, err := a.authService.GenerateToken(req.Context(), auth.AuthGenerateTokenInput{
 		Username: input.Username,
 		Password: input.Password,
 	})
 	if err != nil {
-		if err == users.ErrUserNotFound {
+		if err == auth.ErrUserNotFound {
 			apierrs.NewErrorResponseHTTP(w, http.StatusBadRequest, "invalid username or password")
 			return
 		}
