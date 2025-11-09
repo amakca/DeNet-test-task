@@ -9,6 +9,7 @@ import (
 	"denet-test-task/pkg/hasher"
 	"denet-test-task/pkg/httpserver"
 	"denet-test-task/pkg/logctx"
+	"denet-test-task/pkg/migrator"
 	"denet-test-task/pkg/postgres"
 	"log/slog"
 	"os"
@@ -40,6 +41,13 @@ func Run(configPath string) {
 		log.Error("app - Run - pgdb.NewServices", "err", err)
 	}
 	defer pg.Close()
+
+	// Migrations (golang-migrate)
+	log.Info("Running DB migrations...")
+	if err := migrator.Up(cfg.PG.URL, "./migrations", log); err != nil {
+		log.Error("app - Run - migrator.Up", "err", err)
+		os.Exit(1)
+	}
 
 	// Repositories
 	log.Info("Initializing repositories...")

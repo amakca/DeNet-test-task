@@ -10,7 +10,7 @@ Cхема базы данных сервиса состоит из трёх та
 
 - **Таблица users**: `id`, `username`, `password`, `created_at`, `referrer`, `email`
 - **Таблица points**: `user_id`, `points`, `task_id`, `upd_at`
-- **Таблица tasks**: `id`, `name`, `descr`
+- **Таблица tasks**: `id`, `name`, `descr`, `points`
 
 ## DDL
 
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
   username    TEXT        NOT NULL UNIQUE,
   password    TEXT        NOT NULL,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-  referrer    SERIAL,
+  referrer    INTEGER     NULL REFERENCES users(id) ON DELETE SET NULL,
   email       TEXT UNIQUE
 );
 
@@ -29,7 +29,8 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS tasks (
   id    SERIAL PRIMARY KEY,
   name  TEXT NOT NULL UNIQUE,
-  descr TEXT
+  descr TEXT,
+  points INTEGER NOT NULL DEFAULT 0
 );
 
 -- Таблица баллов по заданиям
@@ -44,6 +45,7 @@ CREATE TABLE IF NOT EXISTS points (
 -- Дополнительные индексы
 CREATE INDEX IF NOT EXISTS idx_points_user_id ON points(user_id);
 CREATE INDEX IF NOT EXISTS idx_points_task_id ON points(task_id);
+CREATE INDEX IF NOT EXISTS idx_points_user_id_upd_at ON points(user_id, upd_at DESC);
 ```
 
 ## Связи и ограничения
