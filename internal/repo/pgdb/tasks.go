@@ -11,15 +11,15 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type TaskRepo struct {
+type TasksRepo struct {
 	*postgres.Postgres
 }
 
-func NewTaskRepo(pg *postgres.Postgres) *TaskRepo {
-	return &TaskRepo{pg}
+func NewTasksRepo(pg *postgres.Postgres) *TasksRepo {
+	return &TasksRepo{pg}
 }
 
-func (r *TaskRepo) GetTaskById(ctx context.Context, id int) (entity.Task, error) {
+func (r *TasksRepo) GetTaskById(ctx context.Context, id int) (entity.Task, error) {
 	sql, args, _ := r.Builder.
 		Select("id, name, descr").
 		From("tasks").
@@ -36,13 +36,13 @@ func (r *TaskRepo) GetTaskById(ctx context.Context, id int) (entity.Task, error)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return entity.Task{}, repoerrs.ErrNotFound
 		}
-		return entity.Task{}, fmt.Errorf("TaskRepo.GetTaskById - r.Pool.QueryRow: %v", err)
+		return entity.Task{}, fmt.Errorf("TasksRepo.GetTaskById - r.Pool.QueryRow: %v", err)
 	}
 
 	return task, nil
 }
 
-func (r *TaskRepo) GetTaskByName(ctx context.Context, name string) (entity.Task, error) {
+func (r *TasksRepo) GetTaskByName(ctx context.Context, name string) (entity.Task, error) {
 	sql, args, _ := r.Builder.
 		Select("id, name, descr").
 		From("tasks").
@@ -59,13 +59,13 @@ func (r *TaskRepo) GetTaskByName(ctx context.Context, name string) (entity.Task,
 		if errors.Is(err, pgx.ErrNoRows) {
 			return entity.Task{}, repoerrs.ErrNotFound
 		}
-		return entity.Task{}, fmt.Errorf("TaskRepo.GetTaskByName - r.Pool.QueryRow: %v", err)
+		return entity.Task{}, fmt.Errorf("TasksRepo.GetTaskByName - r.Pool.QueryRow: %v", err)
 	}
 
 	return task, nil
 }
 
-func (r *TaskRepo) GetAllTasks(ctx context.Context) ([]entity.Task, error) {
+func (r *TasksRepo) GetAllTasks(ctx context.Context) ([]entity.Task, error) {
 	sql, args, _ := r.Builder.
 		Select("id, name, descr").
 		From("tasks").
@@ -73,13 +73,13 @@ func (r *TaskRepo) GetAllTasks(ctx context.Context) ([]entity.Task, error) {
 
 	rows, err := r.Pool.Query(ctx, sql, args...)
 	if err != nil {
-		return nil, fmt.Errorf("TaskRepo.GetAllTasks - r.Pool.Query: %v", err)
+		return nil, fmt.Errorf("TasksRepo.GetAllTasks - r.Pool.Query: %v", err)
 	}
 	defer rows.Close()
 
 	tasks, err := pgx.CollectRows(rows, pgx.RowToStructByName[entity.Task])
 	if err != nil {
-		return nil, fmt.Errorf("TaskRepo.GetAllTasks - pgx.CollectRows: %v", err)
+		return nil, fmt.Errorf("TasksRepo.GetAllTasks - pgx.CollectRows: %v", err)
 	}
 
 	return tasks, nil

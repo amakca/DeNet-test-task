@@ -12,15 +12,15 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type UserRepo struct {
+type UsersRepo struct {
 	*postgres.Postgres
 }
 
-func NewUserRepo(pg *postgres.Postgres) *UserRepo {
-	return &UserRepo{pg}
+func NewUsersRepo(pg *postgres.Postgres) *UsersRepo {
+	return &UsersRepo{pg}
 }
 
-func (r *UserRepo) CreateUser(ctx context.Context, user entity.User) (int, error) {
+func (r *UsersRepo) CreateUser(ctx context.Context, user entity.User) (int, error) {
 	sql, args, _ := r.Builder.
 		Insert("users").
 		Columns("username", "password").
@@ -37,13 +37,13 @@ func (r *UserRepo) CreateUser(ctx context.Context, user entity.User) (int, error
 				return 0, repoerrs.ErrAlreadyExists
 			}
 		}
-		return 0, fmt.Errorf("UserRepo.CreateUser - r.Pool.QueryRow: %v", err)
+		return 0, fmt.Errorf("UsersRepo.CreateUser - r.Pool.QueryRow: %v", err)
 	}
 
 	return id, nil
 }
 
-func (r *UserRepo) GetUserByUsernameAndPassword(ctx context.Context, username, password string) (entity.User, error) {
+func (r *UsersRepo) GetUserByUsernameAndPassword(ctx context.Context, username, password string) (entity.User, error) {
 	sql, args, _ := r.Builder.
 		Select("id, username, password, created_at, referrer, email").
 		From("users").
@@ -63,13 +63,13 @@ func (r *UserRepo) GetUserByUsernameAndPassword(ctx context.Context, username, p
 		if errors.Is(err, pgx.ErrNoRows) {
 			return entity.User{}, repoerrs.ErrNotFound
 		}
-		return entity.User{}, fmt.Errorf("UserRepo.GetUserByUsernameAndPassword - r.Pool.QueryRow: %v", err)
+		return entity.User{}, fmt.Errorf("UsersRepo.GetUserByUsernameAndPassword - r.Pool.QueryRow: %v", err)
 	}
 
 	return user, nil
 }
 
-func (r *UserRepo) GetUserById(ctx context.Context, id int) (entity.User, error) {
+func (r *UsersRepo) GetUserById(ctx context.Context, id int) (entity.User, error) {
 	sql, args, _ := r.Builder.
 		Select("id, username, password, created_at, referrer, email").
 		From("users").
@@ -90,13 +90,13 @@ func (r *UserRepo) GetUserById(ctx context.Context, id int) (entity.User, error)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return entity.User{}, repoerrs.ErrNotFound
 		}
-		return entity.User{}, fmt.Errorf("UserRepo.GetUserById - r.Pool.QueryRow: %v", err)
+		return entity.User{}, fmt.Errorf("UsersRepo.GetUserById - r.Pool.QueryRow: %v", err)
 	}
 
 	return user, nil
 }
 
-func (r *UserRepo) GetUserByUsername(ctx context.Context, username string) (entity.User, error) {
+func (r *UsersRepo) GetUserByUsername(ctx context.Context, username string) (entity.User, error) {
 	sql, args, _ := r.Builder.
 		Select("id, username, password, created_at, referrer, email").
 		From("users").
@@ -117,13 +117,13 @@ func (r *UserRepo) GetUserByUsername(ctx context.Context, username string) (enti
 		if errors.Is(err, pgx.ErrNoRows) {
 			return entity.User{}, repoerrs.ErrNotFound
 		}
-		return entity.User{}, fmt.Errorf("UserRepo.GetUserByUsername - r.Pool.QueryRow: %v", err)
+		return entity.User{}, fmt.Errorf("UsersRepo.GetUserByUsername - r.Pool.QueryRow: %v", err)
 	}
 
 	return user, nil
 }
 
-func (r *UserRepo) SetUserReferrer(ctx context.Context, id int, referrer string) error {
+func (r *UsersRepo) SetUserReferrer(ctx context.Context, id int, referrer string) error {
 	sql, args, _ := r.Builder.
 		Update("users").
 		Set("referrer", referrer).
@@ -132,7 +132,7 @@ func (r *UserRepo) SetUserReferrer(ctx context.Context, id int, referrer string)
 
 	tag, err := r.Pool.Exec(ctx, sql, args...)
 	if err != nil {
-		return fmt.Errorf("UserRepo.UpdateUserReferrer - r.Pool.Exec: %v", err)
+		return fmt.Errorf("UsersRepo.UpdateUserReferrer - r.Pool.Exec: %v", err)
 	}
 	if tag.RowsAffected() == 0 {
 		return repoerrs.ErrNotFound
@@ -141,7 +141,7 @@ func (r *UserRepo) SetUserReferrer(ctx context.Context, id int, referrer string)
 	return nil
 }
 
-func (r *UserRepo) SetUserEmail(ctx context.Context, id int, email string) error {
+func (r *UsersRepo) SetUserEmail(ctx context.Context, id int, email string) error {
 	sql, args, _ := r.Builder.
 		Update("users").
 		Set("email", email).
@@ -150,7 +150,7 @@ func (r *UserRepo) SetUserEmail(ctx context.Context, id int, email string) error
 
 	tag, err := r.Pool.Exec(ctx, sql, args...)
 	if err != nil {
-		return fmt.Errorf("UserRepo.SetUserEmail - r.Pool.Exec: %v", err)
+		return fmt.Errorf("UsersRepo.SetUserEmail - r.Pool.Exec: %v", err)
 	}
 	if tag.RowsAffected() == 0 {
 		return repoerrs.ErrNotFound

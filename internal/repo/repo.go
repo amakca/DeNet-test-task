@@ -7,7 +7,7 @@ import (
 	"denet-test-task/pkg/postgres"
 )
 
-type User interface {
+type Users interface {
 	CreateUser(ctx context.Context, user entity.User) (int, error)
 	GetUserByUsernameAndPassword(ctx context.Context, username, password string) (entity.User, error)
 	GetUserById(ctx context.Context, id int) (entity.User, error)
@@ -17,13 +17,13 @@ type User interface {
 	SetUserEmail(ctx context.Context, id int, email string) error
 }
 
-type Task interface {
+type Tasks interface {
 	GetTaskById(ctx context.Context, id int) (entity.Task, error)
 	GetTaskByName(ctx context.Context, name string) (entity.Task, error)
 	GetAllTasks(ctx context.Context) ([]entity.Task, error)
 }
 
-type Point interface {
+type Points interface {
 	AddPointsByUserId(ctx context.Context, userId int, taskId int, points int) error
 	GetPointsByUserId(ctx context.Context, userId int) (int, error)
 	GetHistoryByUserId(ctx context.Context, userId int) ([]entity.Point, error)
@@ -32,15 +32,15 @@ type Point interface {
 }
 
 type Repositories struct {
-	User
-	Task
-	Point
+	Users
+	Tasks
+	Points
 }
 
 func NewRepositories(pg *postgres.Postgres) *Repositories {
 	return &Repositories{
-		User:  pgdb.NewUserRepo(pg),
-		Task:  pgdb.NewTaskRepo(pg),
-		Point: pgdb.NewPointRepo(pg),
+		Users:  pgdb.NewUsersRepo(pg),
+		Tasks:  pgdb.NewTasksRepo(pg),
+		Points: pgdb.NewPointsRepo(pg),
 	}
 }

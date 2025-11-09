@@ -10,15 +10,15 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type PointRepo struct {
+type PointsRepo struct {
 	*postgres.Postgres
 }
 
-func NewPointRepo(pg *postgres.Postgres) *PointRepo {
-	return &PointRepo{pg}
+func NewPointsRepo(pg *postgres.Postgres) *PointsRepo {
+	return &PointsRepo{pg}
 }
 
-func (r *PointRepo) AddPointsByUserId(ctx context.Context, userId int, taskId int, points int) error {
+func (r *PointsRepo) AddPointsByUserId(ctx context.Context, userId int, taskId int, points int) error {
 
 	subquery := r.Builder.
 		Select("COALESCE(points, 0)").
@@ -39,12 +39,12 @@ func (r *PointRepo) AddPointsByUserId(ctx context.Context, userId int, taskId in
 
 	_, err := r.Pool.Exec(ctx, sql, args...)
 	if err != nil {
-		return fmt.Errorf("PointRepo.AddPointsByUserId - r.Pool.Exec: %v", err)
+		return fmt.Errorf("PointsRepo.AddPointsByUserId - r.Pool.Exec: %v", err)
 	}
 	return nil
 }
 
-func (r *PointRepo) GetHistoryByUserId(ctx context.Context, userId int) ([]entity.Point, error) {
+func (r *PointsRepo) GetHistoryByUserId(ctx context.Context, userId int) ([]entity.Point, error) {
 	sql, args, _ := r.Builder.
 		Select("user_id, task_id, points, upd_at").
 		From("points").
@@ -54,18 +54,18 @@ func (r *PointRepo) GetHistoryByUserId(ctx context.Context, userId int) ([]entit
 
 	rows, err := r.Pool.Query(ctx, sql, args...)
 	if err != nil {
-		return nil, fmt.Errorf("PointRepo.GetHistoryByUserId - r.Pool.Query: %v", err)
+		return nil, fmt.Errorf("PointsRepo.GetHistoryByUserId - r.Pool.Query: %v", err)
 	}
 	defer rows.Close()
 
 	pointsHistory, err := pgx.CollectRows(rows, pgx.RowToStructByName[entity.Point])
 	if err != nil {
-		return nil, fmt.Errorf("PointRepo.GetHistoryByUserId - pgx.CollectRows: %v", err)
+		return nil, fmt.Errorf("PointsRepo.GetHistoryByUserId - pgx.CollectRows: %v", err)
 	}
 	return pointsHistory, nil
 }
 
-func (r *PointRepo) CheckCompletedTask(ctx context.Context, userId int, taskId int) (bool, error) {
+func (r *PointsRepo) CheckCompletedTask(ctx context.Context, userId int, taskId int) (bool, error) {
 	sql, args, _ := r.Builder.
 		Select("count(1)").
 		From("points").
@@ -74,12 +74,12 @@ func (r *PointRepo) CheckCompletedTask(ctx context.Context, userId int, taskId i
 
 	var cnt int
 	if err := r.Pool.QueryRow(ctx, sql, args...).Scan(&cnt); err != nil {
-		return false, fmt.Errorf("PointRepo.CheckCompletedTask - r.Pool.QueryRow: %v", err)
+		return false, fmt.Errorf("PointsRepo.CheckCompletedTask - r.Pool.QueryRow: %v", err)
 	}
 	return cnt > 0, nil
 }
 
-func (r *PointRepo) GetPointsByUserId(ctx context.Context, userId int) (int, error) {
+func (r *PointsRepo) GetPointsByUserId(ctx context.Context, userId int) (int, error) {
 
 	sql, args, _ := r.Builder.
 		Select("COALESCE(SUM(points), 0)").
@@ -89,12 +89,12 @@ func (r *PointRepo) GetPointsByUserId(ctx context.Context, userId int) (int, err
 
 	var points int
 	if err := r.Pool.QueryRow(ctx, sql, args...).Scan(&points); err != nil {
-		return 0, fmt.Errorf("PointRepo.GetPointsByUserId - r.Pool.QueryRow: %v", err)
+		return 0, fmt.Errorf("PointsRepo.GetPointsByUserId - r.Pool.QueryRow: %v", err)
 	}
 	return points, nil
 }
 
-func (r *PointRepo) GetLeaderboard(ctx context.Context, limit int) ([]entity.Point, error) {
+func (r *PointsRepo) GetLeaderboard(ctx context.Context, limit int) ([]entity.Point, error) {
 	sql, args, _ := r.Builder.
 		Select("user_id, SUM(points) as points").
 		From("points").
@@ -105,13 +105,13 @@ func (r *PointRepo) GetLeaderboard(ctx context.Context, limit int) ([]entity.Poi
 
 	rows, err := r.Pool.Query(ctx, sql, args...)
 	if err != nil {
-		return nil, fmt.Errorf("PointRepo.GetLeaderboard - r.Pool.Query: %v", err)
+		return nil, fmt.Errorf("PointsRepo.GetLeaderboard - r.Pool.Query: %v", err)
 	}
 	defer rows.Close()
 
 	leaderboard, err := pgx.CollectRows(rows, pgx.RowToStructByName[entity.Point])
 	if err != nil {
-		return nil, fmt.Errorf("PointRepo.GetLeaderboard - pgx.CollectRows: %v", err)
+		return nil, fmt.Errorf("PointsRepo.GetLeaderboard - pgx.CollectRows: %v", err)
 	}
 	return leaderboard, nil
 }
