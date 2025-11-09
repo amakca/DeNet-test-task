@@ -123,11 +123,11 @@ func (r *UsersRepo) GetUserByUsername(ctx context.Context, username string) (ent
 	return user, nil
 }
 
-func (r *UsersRepo) SetUserReferrer(ctx context.Context, id int, referrer string) error {
+func (r *UsersRepo) SetUserReferrer(ctx context.Context, id int, referrer int) error {
 	sql, args, _ := r.Builder.
 		Update("users").
 		Set("referrer", referrer).
-		Where("id = ?", id).
+		Where("id = ? AND referrer IS NULL", id).
 		ToSql()
 
 	tag, err := r.Pool.Exec(ctx, sql, args...)

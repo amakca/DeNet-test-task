@@ -11,7 +11,7 @@ type UsersGetInfoInput struct {
 
 type UsersSetReferrerInput struct {
 	UserId   int
-	Referrer string
+	Referrer int
 }
 
 type UsersSetEmailInput struct {

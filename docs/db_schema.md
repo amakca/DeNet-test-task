@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
   username    TEXT        NOT NULL UNIQUE,
   password    TEXT        NOT NULL,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-  referrer    TEXT,
+  referrer    SERIAL,
   email       TEXT UNIQUE
 );
 
