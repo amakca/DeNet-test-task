@@ -1,6 +1,8 @@
-package contracts
+package auth
 
-import "context"
+import (
+	"context"
+)
 
 type AuthCreateUserInput struct {
 	Username string

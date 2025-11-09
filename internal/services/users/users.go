@@ -4,112 +4,43 @@ import (
 	"context"
 	"denet-test-task/internal/entity"
 	"denet-test-task/internal/repo"
-	"denet-test-task/internal/repo/repoerrs"
-	"denet-test-task/internal/services/contracts"
-	"denet-test-task/pkg/hasher"
-	"denet-test-task/pkg/logctx"
-	"errors"
-	"fmt"
-	"time"
-
-	"github.com/golang-jwt/jwt"
 )
 
-var (
-	ErrCannotSignToken  = fmt.Errorf("cannot sign token")
-	ErrCannotParseToken = fmt.Errorf("cannot parse token")
+var _ Users = (*UsersService)(nil)
 
-	ErrUserAlreadyExists = fmt.Errorf("user already exists")
-	ErrCannotCreateUser  = fmt.Errorf("cannot create user")
-	ErrUserNotFound      = fmt.Errorf("user not found")
-	ErrCannotGetUser     = fmt.Errorf("cannot get user")
-)
-
-type TokenClaims struct {
-	jwt.StandardClaims
-	UserId int
+type UsersService struct {
+	userRepo  repo.Users
+	pointRepo repo.Points
 }
 
-type AuthService struct {
-	userRepo       repo.User
-	passwordHasher hasher.PasswordHasher
-	signKey        string
-	tokenTTL       time.Duration
+func NewUsersService(userRepo repo.Users, pointRepo repo.Points) *UsersService {
+	return &UsersService{userRepo: userRepo, pointRepo: pointRepo}
 }
 
-func NewAuthService(userRepo repo.User, passwordHasher hasher.PasswordHasher, signKey string, tokenTTL time.Duration) *AuthService {
-	return &AuthService{
-		userRepo:       userRepo,
-		passwordHasher: passwordHasher,
-		signKey:        signKey,
-		tokenTTL:       tokenTTL,
-	}
+func (s *UsersService) GetLeaderboard(ctx context.Context, input UsersGetLeaderboardInput) ([]entity.Point, error) {
+	return s.pointRepo.GetLeaderboard(ctx, input.Limit)
 }
 
-func (s *AuthService) CreateUser(ctx context.Context, input contracts.AuthCreateUserInput) (int, error) {
-	user := entity.User{
-		Username: input.Username,
-		Password: s.passwordHasher.Hash(input.Password),
-	}
-
-	userId, err := s.userRepo.CreateUser(ctx, user)
-	if err != nil {
-		if errors.Is(err, repoerrs.ErrAlreadyExists) {
-			return 0, ErrUserAlreadyExists
-		}
-		logctx.FromContext(ctx).Error("AuthService.CreateUser - userRepo.CreateUser", "err", err)
-		return 0, ErrCannotCreateUser
-	}
-	return userId, nil
+func (s *UsersService) GetInfo(ctx context.Context, input UsersGetInfoInput) (entity.User, error) {
+	return s.userRepo.GetUserById(ctx, input.UserId)
 }
 
-func (s *AuthService) GenerateToken(ctx context.Context, input contracts.AuthGenerateTokenInput) (string, error) {
-	// get user from DB
-	user, err := s.userRepo.GetUserByUsernameAndPassword(ctx, input.Username, s.passwordHasher.Hash(input.Password))
-	if err != nil {
-		if errors.Is(err, repoerrs.ErrNotFound) {
-			return "", ErrUserNotFound
-		}
-		logctx.FromContext(ctx).Error("AuthService.GenerateToken: cannot get user", "err", err)
-		return "", ErrCannotGetUser
-	}
-
-	// generate token
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &TokenClaims{
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(s.tokenTTL).Unix(),
-			IssuedAt:  time.Now().Unix(),
-		},
-		UserId: user.Id,
-	})
-
-	// sign token
-	tokenString, err := token.SignedString([]byte(s.signKey))
-	if err != nil {
-		logctx.FromContext(ctx).Error("AuthService.GenerateToken: cannot sign token", "err", err)
-		return "", ErrCannotSignToken
-	}
-
-	return tokenString, nil
+func (s *UsersService) SetEmail(ctx context.Context, input UsersSetEmailInput) error {
+	return s.userRepo.SetUserEmail(ctx, input.UserId, input.Email)
 }
 
-func (s *AuthService) ParseToken(accessToken string) (int, error) {
-	token, err := jwt.ParseWithClaims(accessToken, &TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
+func (s *UsersService) SetReferrer(ctx context.Context, input UsersSetReferrerInput) error {
+	return s.userRepo.SetUserReferrer(ctx, input.UserId, input.Referrer)
+}
 
-		return []byte(s.signKey), nil
-	})
+func (s *UsersService) CompleteTask(ctx context.Context, input UsersCompleteTaskInput) error {
+	return s.pointRepo.AddPointsByUserId(ctx, input.UserId, input.TaskId, input.Points)
+}
 
-	if err != nil {
-		return 0, ErrCannotParseToken
-	}
+func (s *UsersService) GetHistory(ctx context.Context, input UsersGetHistoryInput) ([]entity.Point, error) {
+	return s.pointRepo.GetHistoryByUserId(ctx, input.UserId)
+}
 
-	claims, ok := token.Claims.(*TokenClaims)
-	if !ok {
-		return 0, ErrCannotParseToken
-	}
-
-	return claims.UserId, nil
+func (s *UsersService) GetPoints(ctx context.Context, input UsersGetPointsInput) (int, error) {
+	return s.pointRepo.GetPointsByUserId(ctx, input.UserId)
 }
