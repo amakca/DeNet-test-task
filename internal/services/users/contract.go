@@ -22,7 +22,6 @@ type UsersSetEmailInput struct {
 type UsersCompleteTaskInput struct {
 	UserId int
 	TaskId int
-	Points int
 }
 
 type UsersGetHistoryInput struct {

@@ -1,11 +1,13 @@
 package services
 
 import (
+	"context"
 	"denet-test-task/internal/repo"
 	"denet-test-task/internal/services/auth"
 	"denet-test-task/internal/services/tasks"
 	"denet-test-task/internal/services/users"
 	"denet-test-task/pkg/hasher"
+	"denet-test-task/pkg/logctx"
 	"time"
 )
 
@@ -24,10 +26,17 @@ type ServicesDependencies struct {
 	TokenTTL time.Duration
 }
 
-func NewServices(deps ServicesDependencies) *Services {
+func NewServices(ctx context.Context, deps ServicesDependencies) (*Services, error) {
+
+	userService, err := users.NewUsersService(ctx, deps.Repos.Users, deps.Repos.Points, deps.Repos.Tasks)
+	if err != nil {
+		logctx.FromContext(ctx).Error("Services.NewServices - users.NewUsersService", "err", err)
+		return nil, err
+	}
+
 	return &Services{
 		Auth:  auth.NewAuthService(deps.Repos.Users, deps.Hasher, deps.SignKey, deps.TokenTTL),
-		User:  users.NewUsersService(deps.Repos.Users, deps.Repos.Points),
+		User:  userService,
 		Tasks: tasks.NewTasksService(deps.Repos.Tasks),
-	}
+	}, nil
 }

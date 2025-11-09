@@ -21,7 +21,7 @@ func NewTasksRepo(pg *postgres.Postgres) *TasksRepo {
 
 func (r *TasksRepo) GetTaskById(ctx context.Context, id int) (entity.Task, error) {
 	sql, args, _ := r.Builder.
-		Select("id, name, descr").
+		Select("id, name, descr, points").
 		From("tasks").
 		Where("id = ?", id).
 		ToSql()
@@ -31,6 +31,7 @@ func (r *TasksRepo) GetTaskById(ctx context.Context, id int) (entity.Task, error
 		&task.Id,
 		&task.Name,
 		&task.Descr,
+		&task.Points,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -44,7 +45,7 @@ func (r *TasksRepo) GetTaskById(ctx context.Context, id int) (entity.Task, error
 
 func (r *TasksRepo) GetTaskByName(ctx context.Context, name string) (entity.Task, error) {
 	sql, args, _ := r.Builder.
-		Select("id, name, descr").
+		Select("id, name, descr, points").
 		From("tasks").
 		Where("name = ?", name).
 		ToSql()
@@ -54,6 +55,7 @@ func (r *TasksRepo) GetTaskByName(ctx context.Context, name string) (entity.Task
 		&task.Id,
 		&task.Name,
 		&task.Descr,
+		&task.Points,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -67,7 +69,7 @@ func (r *TasksRepo) GetTaskByName(ctx context.Context, name string) (entity.Task
 
 func (r *TasksRepo) GetAllTasks(ctx context.Context) ([]entity.Task, error) {
 	sql, args, _ := r.Builder.
-		Select("id, name, descr").
+		Select("id, name, descr, points").
 		From("tasks").
 		ToSql()
 
