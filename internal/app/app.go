@@ -14,10 +14,25 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/go-chi/chi/v5"
 )
+
+// ensureSSLMode adds sslmode=disable to the URL if sslmode parameter is not present
+func ensureSSLMode(url string) string {
+	if strings.Contains(url, "sslmode=") {
+		return url
+	}
+
+	separator := "?"
+	if strings.Contains(url, "?") {
+		separator = "&"
+	}
+
+	return url + separator + "sslmode=disable"
+}
 
 func Run(configPath string) {
 	// Configuration
@@ -36,7 +51,8 @@ func Run(configPath string) {
 
 	// DB
 	log.Info("Initializing postgres...")
-	pg, err := postgres.New(cfg.PG.URL, postgres.MaxPoolSize(cfg.PG.MaxPoolSize))
+	dbURL := ensureSSLMode(cfg.PG.URL)
+	pg, err := postgres.New(dbURL, postgres.MaxPoolSize(cfg.PG.MaxPoolSize))
 	if err != nil {
 		log.Error("app - Run - pgdb.NewServices", "err", err)
 	}
@@ -44,7 +60,7 @@ func Run(configPath string) {
 
 	// Migrations (golang-migrate)
 	log.Info("Running DB migrations...")
-	if err := migrator.Up(cfg.PG.URL, "./migrations", log); err != nil {
+	if err := migrator.Up(dbURL, "./../../migrations", log); err != nil {
 		log.Error("app - Run - migrator.Up", "err", err)
 		os.Exit(1)
 	}

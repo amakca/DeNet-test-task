@@ -84,7 +84,6 @@ func (r *UsersRepo) GetUserById(ctx context.Context, id int) (entity.User, error
 		&user.CreatedAt,
 		&user.Referrer,
 		&user.Email,
-		&user.Referrer,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

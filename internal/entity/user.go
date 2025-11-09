@@ -7,6 +7,6 @@ type User struct {
 	Username  string    `db:"username"`
 	Password  string    `db:"password"`
 	CreatedAt time.Time `db:"created_at"`
-	Referrer  string    `db:"referrer"`
-	Email     string    `db:"email"`
+	Referrer  *string   `db:"referrer"`
+	Email     *string   `db:"email"`
 }

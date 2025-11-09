@@ -20,12 +20,10 @@ func NewPointsRepo(pg *postgres.Postgres) *PointsRepo {
 
 func (r *PointsRepo) AddPointsByUserId(ctx context.Context, userId int, taskId int, points int) error {
 
-	subquery := r.Builder.
-		Select("COALESCE(points, 0)").
-		From("points").
-		Where("user_id = ?", userId).
-		OrderBy("upd_at DESC").
-		Limit(1)
+	pointsExpr := squirrel.Expr(
+		"COALESCE((SELECT points FROM points WHERE user_id = ? ORDER BY upd_at DESC LIMIT 1), 0) + ?",
+		userId, points,
+	)
 
 	sql, args, _ := r.Builder.
 		Insert("points").
@@ -33,7 +31,7 @@ func (r *PointsRepo) AddPointsByUserId(ctx context.Context, userId int, taskId i
 		Values(
 			userId,
 			taskId,
-			squirrel.Expr("? + ?", subquery, points),
+			pointsExpr,
 		).
 		ToSql()
 
@@ -96,7 +94,7 @@ func (r *PointsRepo) GetPointsByUserId(ctx context.Context, userId int) (int, er
 
 func (r *PointsRepo) GetLeaderboard(ctx context.Context, limit int) ([]entity.Point, error) {
 	sql, args, _ := r.Builder.
-		Select("user_id, SUM(points) as points").
+		Select("user_id, 0 AS task_id, SUM(points) AS points, MAX(upd_at) AS upd_at").
 		From("points").
 		GroupBy("user_id").
 		OrderBy("points DESC").

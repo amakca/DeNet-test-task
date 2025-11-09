@@ -4,6 +4,7 @@ import (
 	"denet-test-task/internal/api/v1/apierrs"
 	"denet-test-task/internal/services/tasks"
 	"denet-test-task/internal/services/users"
+	"denet-test-task/pkg/logctx"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -38,12 +39,14 @@ func (r *usersRoutes) handleGetUserStatus(w http.ResponseWriter, req *http.Reque
 	userId := chi.URLParam(req, "user_id")
 	userIdInt, err := strconv.Atoi(userId)
 	if err != nil {
+		logctx.FromContext(req.Context()).Error("usersRoutes.handleGetUserStatus - strconv.Atoi", "err", err)
 		apierrs.NewErrorResponseHTTP(w, http.StatusBadRequest, "invalid user id")
 		return
 	}
 
 	user, err := r.usersService.GetInfo(req.Context(), users.UsersGetInfoInput{UserId: userIdInt})
 	if err != nil {
+		logctx.FromContext(req.Context()).Error("usersRoutes.handleGetUserStatus - usersService.GetInfo", "err", err)
 		apierrs.NewErrorResponseHTTP(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -105,12 +108,14 @@ func (r *usersRoutes) handleGetLeaderboard(w http.ResponseWriter, req *http.Requ
 	limit := req.URL.Query().Get("limit")
 	limitInt, err := strconv.Atoi(limit)
 	if err != nil || limitInt <= 0 || limitInt > 100 {
+		logctx.FromContext(req.Context()).Error("usersRoutes.handleGetLeaderboard - strconv.Atoi", "err", err)
 		apierrs.NewErrorResponseHTTP(w, http.StatusBadRequest, "invalid limit")
 		return
 	}
 
 	leaderboard, err := r.usersService.GetLeaderboard(req.Context(), users.UsersGetLeaderboardInput{Limit: limitInt})
 	if err != nil {
+		logctx.FromContext(req.Context()).Error("usersRoutes.handleGetLeaderboard - usersService.GetLeaderboard", "err", err)
 		apierrs.NewErrorResponseHTTP(w, http.StatusInternalServerError, err.Error())
 		return
 	}
