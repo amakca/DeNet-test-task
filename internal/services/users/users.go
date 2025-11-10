@@ -6,17 +6,20 @@ import (
 	"denet-test-task/internal/repo"
 	"denet-test-task/pkg/logctx"
 	"fmt"
+	"strconv"
 )
 
 var _ Users = (*UsersService)(nil)
 
 var (
-	ErrTaskNotFound             = fmt.Errorf("task not found")
-	ErrTaskAlreadyCompleted     = fmt.Errorf("task already completed")
-	ErrCannotCheckCompletedTask = fmt.Errorf("cannot check if task is completed")
-	ErrCannotAddPoints          = fmt.Errorf("cannot add points")
-	ErrCannotGetTasks           = fmt.Errorf("cannot get tasks")
-	ErrUserAlreadySetReferrer   = fmt.Errorf("user already has a referrer")
+	ErrTaskNotFound                  = fmt.Errorf("task not found")
+	ErrTaskAlreadyCompleted          = fmt.Errorf("task already completed")
+	ErrCannotCheckCompletedTask      = fmt.Errorf("cannot check if task is completed")
+	ErrCannotAddPoints               = fmt.Errorf("cannot add points")
+	ErrCannotGetTasks                = fmt.Errorf("cannot get tasks")
+	ErrUserAlreadySetReferrer        = fmt.Errorf("user already has a referrer")
+	ErrTaskNotAllowedToComplete      = fmt.Errorf("task not allowed to complete")
+	ErrReferrerCannotBeTheSameAsUser = fmt.Errorf("referrer cannot be the same as user")
 )
 
 const (
@@ -52,7 +55,7 @@ func NewUsersService(ctx context.Context, userRepo repo.Users, pointRepo repo.Po
 	return service, nil
 }
 
-func (s *UsersService) GetLeaderboard(ctx context.Context, input UsersGetLeaderboardInput) ([]entity.Point, error) {
+func (s *UsersService) GetLeaderboard(ctx context.Context, input UsersGetLeaderboardInput) ([]entity.LeaderboardItem, error) {
 	return s.pointsRepo.GetLeaderboard(ctx, input.Limit)
 }
 
@@ -61,15 +64,31 @@ func (s *UsersService) GetInfo(ctx context.Context, input UsersGetInfoInput) (en
 }
 
 func (s *UsersService) SetEmail(ctx context.Context, input UsersSetEmailInput) error {
+
+	pointsForEmail, ok := s.tasksList[TaskCompleteEmail]
+	if !ok {
+		logctx.FromContext(ctx).Error("UsersService.SetEmail - task not found")
+	}
+
+	err := s.pointsRepo.AddPointsByUserId(ctx, input.UserId, TaskCompleteEmail, pointsForEmail)
+	if err != nil {
+		logctx.FromContext(ctx).Error("UsersService.SetEmail - pointsRepo.AddPointsByUserId", "err", err)
+		return ErrCannotAddPoints
+	}
+
 	return s.usersRepo.SetUserEmail(ctx, input.UserId, input.Email)
 }
 
 func (s *UsersService) SetReferrer(ctx context.Context, input UsersSetReferrerInput) error {
 
-	_, err := s.usersRepo.GetUserById(ctx, input.Referrer)
+	referrer, err := s.usersRepo.GetUserById(ctx, input.Referrer)
 	if err != nil {
 		logctx.FromContext(ctx).Error("UsersService.SetReferrer - usersRepo.GetUserById", "err", err)
 		return err
+	}
+	if referrer.Referrer != nil && *referrer.Referrer == strconv.Itoa(input.UserId) {
+		logctx.FromContext(ctx).Error("UsersService.SetReferrer - referrer cannot be the same as user")
+		return ErrReferrerCannotBeTheSameAsUser
 	}
 
 	user, err := s.usersRepo.GetUserById(ctx, input.UserId)
@@ -77,7 +96,7 @@ func (s *UsersService) SetReferrer(ctx context.Context, input UsersSetReferrerIn
 		logctx.FromContext(ctx).Error("UsersService.SetReferrer - usersRepo.GetUserById", "err", err)
 		return err
 	}
-	if user.Referrer != "" {
+	if user.Referrer != nil {
 		logctx.FromContext(ctx).Error("UsersService.SetReferrer - user already has a referrer")
 		return ErrUserAlreadySetReferrer
 	}
@@ -99,6 +118,11 @@ func (s *UsersService) SetReferrer(ctx context.Context, input UsersSetReferrerIn
 }
 
 func (s *UsersService) CompleteTask(ctx context.Context, input UsersCompleteTaskInput) error {
+
+	if input.TaskId == TaskCompleteEmail || input.TaskId == TaskGetReferral || input.TaskId == TaskGiveReferral {
+		logctx.FromContext(ctx).Error("UsersService.CompleteTask - task not allowed to complete")
+		return ErrTaskNotAllowedToComplete
+	}
 
 	points, ok := s.tasksList[input.TaskId]
 	if !ok {
