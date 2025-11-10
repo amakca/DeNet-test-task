@@ -28,7 +28,7 @@ type Points interface {
 	GetPointsByUserId(ctx context.Context, userId int) (int, error)
 	GetHistoryByUserId(ctx context.Context, userId int) ([]entity.Point, error)
 	CheckCompletedTask(ctx context.Context, userId int, taskId int) (bool, error)
-	GetLeaderboard(ctx context.Context, limit int) ([]entity.Point, error)
+	GetLeaderboard(ctx context.Context, limit int) ([]entity.LeaderboardItem, error)
 }
 
 type Repositories struct {

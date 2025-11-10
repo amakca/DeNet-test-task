@@ -44,5 +44,5 @@ type Users interface {
 	CompleteTask(ctx context.Context, input UsersCompleteTaskInput) error
 	GetHistory(ctx context.Context, input UsersGetHistoryInput) ([]entity.Point, error)
 	GetPoints(ctx context.Context, input UsersGetPointsInput) (int, error)
-	GetLeaderboard(ctx context.Context, input UsersGetLeaderboardInput) ([]entity.Point, error)
+	GetLeaderboard(ctx context.Context, input UsersGetLeaderboardInput) ([]entity.LeaderboardItem, error)
 }

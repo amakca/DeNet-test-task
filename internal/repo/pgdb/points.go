@@ -92,11 +92,12 @@ func (r *PointsRepo) GetPointsByUserId(ctx context.Context, userId int) (int, er
 	return points, nil
 }
 
-func (r *PointsRepo) GetLeaderboard(ctx context.Context, limit int) ([]entity.Point, error) {
+func (r *PointsRepo) GetLeaderboard(ctx context.Context, limit int) ([]entity.LeaderboardItem, error) {
 	sql, args, _ := r.Builder.
-		Select("user_id, 0 AS task_id, SUM(points) AS points, MAX(upd_at) AS upd_at").
-		From("points").
-		GroupBy("user_id").
+		Select("u.username AS username, COALESCE(SUM(p.points), 0) AS points").
+		From("points p").
+		Join("users u ON u.id = p.user_id").
+		GroupBy("u.username").
 		OrderBy("points DESC").
 		Limit(uint64(limit)).
 		ToSql()
@@ -107,7 +108,7 @@ func (r *PointsRepo) GetLeaderboard(ctx context.Context, limit int) ([]entity.Po
 	}
 	defer rows.Close()
 
-	leaderboard, err := pgx.CollectRows(rows, pgx.RowToStructByName[entity.Point])
+	leaderboard, err := pgx.CollectRows(rows, pgx.RowToStructByName[entity.LeaderboardItem])
 	if err != nil {
 		return nil, fmt.Errorf("PointsRepo.GetLeaderboard - pgx.CollectRows: %v", err)
 	}
