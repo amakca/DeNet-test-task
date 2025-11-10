@@ -36,3 +36,7 @@ bin/
 dist/
 build/
 
+# Env and secrets
+.env
+.env.*
+env.local

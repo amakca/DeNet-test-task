@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: denet-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-denet}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB -h 127.0.0.1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: denet-app
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      # Compose will merge values from .env; keep sane defaults if .env missing
+      APP_NAME: ${APP_NAME:-denet-test-task}
+      APP_VERSION: ${APP_VERSION:-1.0.0}
+      HTTP_PORT: ${HTTP_PORT:-8080}
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+      PG_MAX_POOL_SIZE: ${PG_MAX_POOL_SIZE:-20}
+      # Force internal hostname 'db' regardless of host .env to avoid localhost (::1) issues
+      # The app appends sslmode=disable if missing; it's ok to omit
+      PG_URL: postgres://postgres:postgres@db:5432/denet
+      JWT_SIGN_KEY: ${JWT_SIGN_KEY:-dev-secret}
+      JWT_TOKEN_TTL: ${JWT_TOKEN_TTL:-120m}
+      HASHER_SALT: ${HASHER_SALT:-dev-salt}
+    ports:
+      - "${HTTP_PORT:-8080}:${HTTP_PORT:-8080}"
+    restart: unless-stopped
+
+volumes:
+  db_data: {}
+
+
