@@ -4,21 +4,22 @@ import (
 	"context"
 	"denet-test-task/internal/entity"
 	"denet-test-task/internal/repo"
-	"github.com/stretchr/testify/assert"
 	"errors"
 	"strconv"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type mockUsersRepo struct {
-	usersByID       map[int]entity.User
-	getByIDErr      error
-	setRefUserID    int
-	setRefReferrer  int
-	setReferrerErr  error
-	setEmailUserID  int
-	setEmailEmail   string
-	setEmailErr     error
+	usersByID      map[int]entity.User
+	getByIDErr     error
+	setRefUserID   int
+	setRefReferrer int
+	setReferrerErr error
+	setEmailUserID int
+	setEmailEmail  string
+	setEmailErr    error
 }
 
 func (m *mockUsersRepo) CreateUser(_ context.Context, _ entity.User) (int, error) {
@@ -53,16 +54,16 @@ func (m *mockUsersRepo) SetUserEmail(_ context.Context, id int, email string) er
 var _ repo.Users = (*mockUsersRepo)(nil)
 
 type mockPointsRepo struct {
-	addCalls            []struct{ UserID, TaskID, Points int }
-	addErr              error
-	checkCompletedResp  bool
-	checkCompletedErr   error
-	leaderboardResp     []entity.LeaderboardItem
-	leaderboardErr      error
-	historyResp         []entity.Point
-	historyErr          error
-	pointsByUserResp    int
-	pointsByUserErr     error
+	addCalls           []struct{ UserID, TaskID, Points int }
+	addErr             error
+	checkCompletedResp bool
+	checkCompletedErr  error
+	leaderboardResp    []entity.LeaderboardItem
+	leaderboardErr     error
+	historyResp        []entity.Point
+	historyErr         error
+	pointsByUserResp   int
+	pointsByUserErr    error
 }
 
 func (m *mockPointsRepo) AddPointsByUserId(_ context.Context, userId int, taskId int, points int) error {
@@ -280,5 +281,3 @@ func TestUsersService_SetEmail_AddPointsError(t *testing.T) {
 }
 
 func strPtr(s string) *string { return &s }
-
-
